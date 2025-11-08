@@ -9,7 +9,7 @@ require (
 	github.com/jackc/pgx/v5 v5.6.0
 	golang.org/x/crypto v0.24.0
 	google.golang.org/grpc v1.66.2
-	watchtower/proto v0.0.0
+	watchtower/proto v0.0.0-00010101000000-000000000000
 )
 
 require (

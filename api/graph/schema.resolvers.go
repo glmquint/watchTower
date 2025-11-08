@@ -42,7 +42,18 @@ func (r *mutationResolver) AcknowledgeIncident(ctx context.Context, incidentID s
 		d := resp.GetDetails()
 		details = &d
 	}
-	return &model.Incident{ID: resp.GetId(), Title: resp.GetTitle(), Severity: resp.GetSeverity(), Status: resp.GetStatus(), Details: details}, nil
+	out := &model.Incident{ID: resp.GetId(), Title: resp.GetTitle(), Severity: resp.GetSeverity(), Status: resp.GetStatus(), Details: details}
+	// map comments if present
+	for _, cm := range resp.GetComments() {
+		c := model.Comment{ID: cm.GetId(), Text: cm.GetText(), CreatedAt: cm.GetCreatedAt()}
+		if cm.GetAuthorId() != "" && r.AuthClient != nil {
+			if uresp, err := r.AuthClient.GetUser(ctx, &authv1.GetUserRequest{UserId: cm.GetAuthorId()}); err == nil {
+				c.Author = &model.User{ID: uresp.GetId(), Email: uresp.GetEmail(), Name: uresp.GetName()}
+			}
+		}
+		out.Comments = append(out.Comments, c)
+	}
+	return out, nil
 }
 
 // AddComment is the resolver for the addComment field.
@@ -59,7 +70,13 @@ func (r *mutationResolver) AddComment(ctx context.Context, incidentID string, te
 	if err != nil {
 		return nil, err
 	}
-	return &model.Comment{ID: resp.GetId(), Text: resp.GetText(), CreatedAt: resp.GetCreatedAt()}, nil
+	c := &model.Comment{ID: resp.GetId(), Text: resp.GetText(), CreatedAt: resp.GetCreatedAt()}
+	if resp.GetAuthorId() != "" && r.AuthClient != nil {
+		if uresp, err := r.AuthClient.GetUser(ctx, &authv1.GetUserRequest{UserId: resp.GetAuthorId()}); err == nil {
+			c.Author = &model.User{ID: uresp.GetId(), Email: uresp.GetEmail(), Name: uresp.GetName()}
+		}
+	}
+	return c, nil
 }
 
 // RegisterPushToken is the resolver for the registerPushToken field.
@@ -121,7 +138,17 @@ func (r *queryResolver) Incident(ctx context.Context, id string) (*model.Inciden
 		d := resp.GetDetails()
 		details = &d
 	}
-	return &model.Incident{ID: resp.GetId(), Title: resp.GetTitle(), Severity: resp.GetSeverity(), Status: resp.GetStatus(), Details: details}, nil
+	out := &model.Incident{ID: resp.GetId(), Title: resp.GetTitle(), Severity: resp.GetSeverity(), Status: resp.GetStatus(), Details: details}
+	for _, cm := range resp.GetComments() {
+		c := model.Comment{ID: cm.GetId(), Text: cm.GetText(), CreatedAt: cm.GetCreatedAt()}
+		if cm.GetAuthorId() != "" && r.AuthClient != nil {
+			if uresp, err := r.AuthClient.GetUser(ctx, &authv1.GetUserRequest{UserId: cm.GetAuthorId()}); err == nil {
+				c.Author = &model.User{ID: uresp.GetId(), Email: uresp.GetEmail(), Name: uresp.GetName()}
+			}
+		}
+		out.Comments = append(out.Comments, c)
+	}
+	return out, nil
 }
 
 // Me is the resolver for the me field.

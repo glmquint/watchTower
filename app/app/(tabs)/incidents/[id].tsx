@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, Button, FlatList, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Button, FlatList, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { gql } from '@apollo/client';
@@ -65,7 +65,14 @@ export default function IncidentDetailScreen() {
         const next = { ...existing.incident };
         if (inc.status) next.status = inc.status;
         if (Array.isArray(inc.comments) && inc.comments.length > 0) {
-          next.comments = [...(next.comments ?? []), ...inc.comments];
+          const normalizedComments = inc.comments.map((c) => ({
+            __typename: 'Comment',
+            id: typeof c.id === 'number' ? String(c.id) : c.id,
+            text: c.text ?? '',
+            createdAt: c.createdAt ?? new Date().toISOString(),
+            author: c.author ?? null,
+          }));
+          next.comments = [...(next.comments ?? []), ...normalizedComments];
         }
         client.writeQuery({ query: INCIDENT_QUERY, variables, data: { incident: next } });
       } catch {}
@@ -100,19 +107,48 @@ export default function IncidentDetailScreen() {
   const onAddComment = async () => {
     if (!text.trim()) return;
     try {
-  const { data: resp } = await addComment({ variables: { id, text } });
-  const c = resp?.addComment;
+      // optimistic id to let UI show the comment immediately
+  const optimisticId = `optimistic-${Date.now()}`;
+  const optimisticComment = { __typename: 'Comment', id: optimisticId, text, createdAt: new Date().toISOString(), author: null };
+
+      const { data: resp } = await addComment({
+        variables: { id, text },
+        optimisticResponse: { addComment: optimisticComment },
+      });
+
+      let c = resp?.addComment ?? optimisticComment;
+      // normalize server response to ensure required fields exist for cache writes
       if (c) {
-        const existing = client.readQuery<any>({ query: INCIDENT_QUERY, variables });
-        client.writeQuery({
-          query: INCIDENT_QUERY,
-          variables,
-          data: { incident: { ...existing.incident, comments: [...(existing.incident.comments ?? []), c] } },
-        });
+        if (typeof (c as any).id === 'number') (c as any).id = String((c as any).id);
+        if ((c as any).__typename == null) (c as any).__typename = 'Comment';
+        if ((c as any).author === undefined) (c as any).author = null;
       }
+
+      // try to update cache; fall back to using the current incident in memory
+      try {
+        const existing = client.readQuery<any>({ query: INCIDENT_QUERY, variables });
+        if (existing?.incident) {
+          client.writeQuery({
+            query: INCIDENT_QUERY,
+            variables,
+            data: { incident: { ...existing.incident, comments: [...(existing.incident.comments ?? []), c] } },
+          });
+        } else {
+          // no cached incident; write using the current loaded incident
+          client.writeQuery({
+            query: INCIDENT_QUERY,
+            variables,
+            data: { incident: { ...(incident ?? {}), comments: [...(incident?.comments ?? []), c] } },
+          });
+        }
+      } catch (e) {
+        console.error('cache update failed after addComment', e);
+      }
+
       setText('');
     } catch (e) {
-      // ignore for now
+      console.error('addComment error', e);
+      Alert.alert('Comment failed', (e as Error).message || 'Unknown error');
     }
   };
 

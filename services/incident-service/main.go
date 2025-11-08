@@ -77,7 +77,24 @@ func (s *incidentServer) GetIncident(ctx context.Context, req *incidentv1.GetInc
 	if err := s.db.QueryRow(ctx, `SELECT id, title, severity, status, details, assignee_id FROM incidents WHERE id=$1`, req.GetId()).Scan(&id, &title, &severity, &status, &details, &assignee); err != nil {
 		return nil, err
 	}
-	return &incidentv1.Incident{Id: strconv.FormatInt(id, 10), Title: title.String, Severity: severity.String, Status: status.String, Details: details.String, AssigneeId: assignee.String}, nil
+	inc := &incidentv1.Incident{Id: strconv.FormatInt(id, 10), Title: title.String, Severity: severity.String, Status: status.String, Details: details.String, AssigneeId: assignee.String}
+	// load comments for this incident
+	rows, err := s.db.Query(ctx, `SELECT id, text, author_id, created_at FROM comments WHERE incident_id=$1 ORDER BY id ASC`, req.GetId())
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var cid int64
+			var text, author sql.NullString
+			var createdAt time.Time
+			if err := rows.Scan(&cid, &text, &author, &createdAt); err != nil {
+				// skip problematic row
+				continue
+			}
+			c := &incidentv1.Comment{Id: strconv.FormatInt(cid, 10), Text: text.String, AuthorId: author.String, CreatedAt: createdAt.UTC().Format(time.RFC3339)}
+			inc.Comments = append(inc.Comments, c)
+		}
+	}
+	return inc, nil
 }
 
 func (s *incidentServer) AcknowledgeIncident(ctx context.Context, req *incidentv1.AcknowledgeIncidentRequest) (*incidentv1.Incident, error) {

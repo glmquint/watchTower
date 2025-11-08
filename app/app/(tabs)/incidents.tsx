@@ -46,11 +46,20 @@ export default function IncidentsScreen() {
       const newIncident = payload?.onNewIncident;
       if (!newIncident) return;
       try {
+        // ensure the incoming payload has all required fields for the cache write
+        const normalized = {
+          __typename: 'Incident',
+          id: typeof newIncident.id === 'number' ? String(newIncident.id) : newIncident.id,
+          title: newIncident.title ?? 'Untitled',
+          severity: newIncident.severity ?? 'medium',
+          status: newIncident.status ?? 'open',
+          details: newIncident.details ?? null,
+        } as any;
         const existing = client.readQuery<{ incidents: any[] }>({ query: INCIDENTS_QUERY, variables })?.incidents ?? [];
         client.writeQuery({
           query: INCIDENTS_QUERY,
           variables,
-          data: { incidents: [newIncident, ...existing] },
+          data: { incidents: [normalized, ...existing] },
         });
         // Refetch to hydrate missing fields (severity/status/details) from server
         client.refetchQueries({ include: [INCIDENTS_QUERY] });

@@ -29,6 +29,7 @@ type Incident struct {
 	Status        string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
 	Details       string                 `protobuf:"bytes,5,opt,name=details,proto3" json:"details,omitempty"` // JSON string of the raw alert
 	AssigneeId    string                 `protobuf:"bytes,6,opt,name=assignee_id,json=assigneeId,proto3" json:"assignee_id,omitempty"`
+	Comments      []*Comment             `protobuf:"bytes,7,rep,name=comments,proto3" json:"comments,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -103,6 +104,13 @@ func (x *Incident) GetAssigneeId() string {
 		return x.AssigneeId
 	}
 	return ""
+}
+
+func (x *Incident) GetComments() []*Comment {
+	if x != nil {
+		return x.Comments
+	}
+	return nil
 }
 
 type ListIncidentsRequest struct {
@@ -481,7 +489,7 @@ var File_incident_proto protoreflect.FileDescriptor
 
 const file_incident_proto_rawDesc = "" +
 	"\n" +
-	"\x0eincident.proto\x12\vincident.v1\"\x9f\x01\n" +
+	"\x0eincident.proto\x12\vincident.v1\"\xd1\x01\n" +
 	"\bIncident\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1a\n" +
@@ -489,7 +497,8 @@ const file_incident_proto_rawDesc = "" +
 	"\x06status\x18\x04 \x01(\tR\x06status\x12\x18\n" +
 	"\adetails\x18\x05 \x01(\tR\adetails\x12\x1f\n" +
 	"\vassignee_id\x18\x06 \x01(\tR\n" +
-	"assigneeId\"D\n" +
+	"assigneeId\x120\n" +
+	"\bcomments\x18\a \x03(\v2\x14.incident.v1.CommentR\bcomments\"D\n" +
 	"\x14ListIncidentsRequest\x12\x14\n" +
 	"\x05limit\x18\x01 \x01(\x05R\x05limit\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\"L\n" +
@@ -547,22 +556,23 @@ var file_incident_proto_goTypes = []any{
 	(*AcknowledgeIncidentRequest)(nil), // 7: incident.v1.AcknowledgeIncidentRequest
 }
 var file_incident_proto_depIdxs = []int32{
-	0, // 0: incident.v1.ListIncidentsResponse.incidents:type_name -> incident.v1.Incident
-	1, // 1: incident.v1.IncidentService.ListIncidents:input_type -> incident.v1.ListIncidentsRequest
-	4, // 2: incident.v1.IncidentService.GetIncident:input_type -> incident.v1.GetIncidentRequest
-	3, // 3: incident.v1.IncidentService.CreateIncident:input_type -> incident.v1.CreateIncidentRequest
-	7, // 4: incident.v1.IncidentService.AcknowledgeIncident:input_type -> incident.v1.AcknowledgeIncidentRequest
-	5, // 5: incident.v1.IncidentService.AddComment:input_type -> incident.v1.AddCommentRequest
-	2, // 6: incident.v1.IncidentService.ListIncidents:output_type -> incident.v1.ListIncidentsResponse
-	0, // 7: incident.v1.IncidentService.GetIncident:output_type -> incident.v1.Incident
-	0, // 8: incident.v1.IncidentService.CreateIncident:output_type -> incident.v1.Incident
-	0, // 9: incident.v1.IncidentService.AcknowledgeIncident:output_type -> incident.v1.Incident
-	6, // 10: incident.v1.IncidentService.AddComment:output_type -> incident.v1.Comment
-	6, // [6:11] is the sub-list for method output_type
-	1, // [1:6] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	6, // 0: incident.v1.Incident.comments:type_name -> incident.v1.Comment
+	0, // 1: incident.v1.ListIncidentsResponse.incidents:type_name -> incident.v1.Incident
+	1, // 2: incident.v1.IncidentService.ListIncidents:input_type -> incident.v1.ListIncidentsRequest
+	4, // 3: incident.v1.IncidentService.GetIncident:input_type -> incident.v1.GetIncidentRequest
+	3, // 4: incident.v1.IncidentService.CreateIncident:input_type -> incident.v1.CreateIncidentRequest
+	7, // 5: incident.v1.IncidentService.AcknowledgeIncident:input_type -> incident.v1.AcknowledgeIncidentRequest
+	5, // 6: incident.v1.IncidentService.AddComment:input_type -> incident.v1.AddCommentRequest
+	2, // 7: incident.v1.IncidentService.ListIncidents:output_type -> incident.v1.ListIncidentsResponse
+	0, // 8: incident.v1.IncidentService.GetIncident:output_type -> incident.v1.Incident
+	0, // 9: incident.v1.IncidentService.CreateIncident:output_type -> incident.v1.Incident
+	0, // 10: incident.v1.IncidentService.AcknowledgeIncident:output_type -> incident.v1.Incident
+	6, // 11: incident.v1.IncidentService.AddComment:output_type -> incident.v1.Comment
+	7, // [7:12] is the sub-list for method output_type
+	2, // [2:7] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_incident_proto_init() }
