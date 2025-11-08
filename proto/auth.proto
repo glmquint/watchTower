@@ -39,4 +39,15 @@ service AuthService {
   rpc Register (RegisterRequest) returns (AuthResponse);
   rpc Login (LoginRequest) returns (AuthResponse);
   rpc ValidateToken (ValidateTokenRequest) returns (ValidateTokenResponse);
+  rpc RegisterPushToken (RegisterPushTokenRequest) returns (User);
+  rpc GetUser (GetUserRequest) returns (User);
+}
+
+message RegisterPushTokenRequest {
+  string user_id = 1;
+  string token = 2;
+}
+
+message GetUserRequest {
+  string user_id = 1;
 }

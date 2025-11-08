@@ -8,26 +8,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
-
-	authv1 "watchtower/proto/gen/auth/v1"
-	incidentv1 "watchtower/proto/gen/incident/v1"
-
 	"watchtower/api/graph/generated"
 	"watchtower/api/graph/model"
+	authv1 "watchtower/proto/gen/auth/v1"
+	incidentv1 "watchtower/proto/gen/incident/v1"
 )
-
-// Register is the resolver for the register field.
-func (r *mutationResolver) Register(ctx context.Context, email string, name string, password string) (*model.AuthPayload, error) {
-	if r.AuthClient == nil {
-		return nil, errors.New("auth service unavailable")
-	}
-	resp, err := r.AuthClient.Register(ctx, &authv1.RegisterRequest{Email: email, Name: name, Password: password})
-	if err != nil {
-		return nil, err
-	}
-	return &model.AuthPayload{Token: resp.GetJwtToken(), User: &model.User{ID: resp.GetUser().GetId(), Email: resp.GetUser().GetEmail(), Name: resp.GetUser().GetName()}}, nil
-}
 
 // Login is the resolver for the login field.
 func (r *mutationResolver) Login(ctx context.Context, email string, password string) (*model.AuthPayload, error) {
@@ -41,23 +28,117 @@ func (r *mutationResolver) Login(ctx context.Context, email string, password str
 	return &model.AuthPayload{Token: resp.GetJwtToken(), User: &model.User{ID: resp.GetUser().GetId(), Email: resp.GetUser().GetEmail(), Name: resp.GetUser().GetName()}}, nil
 }
 
+// AcknowledgeIncident is the resolver for the acknowledgeIncident field.
+func (r *mutationResolver) AcknowledgeIncident(ctx context.Context, incidentID string) (*model.Incident, error) {
+	if r.IncidentClient == nil {
+		return nil, errors.New("incident service unavailable")
+	}
+	resp, err := r.IncidentClient.AcknowledgeIncident(ctx, &incidentv1.AcknowledgeIncidentRequest{IncidentId: incidentID})
+	if err != nil {
+		return nil, err
+	}
+	var details *string
+	if resp.GetDetails() != "" {
+		d := resp.GetDetails()
+		details = &d
+	}
+	return &model.Incident{ID: resp.GetId(), Title: resp.GetTitle(), Severity: resp.GetSeverity(), Status: resp.GetStatus(), Details: details}, nil
+}
+
+// AddComment is the resolver for the addComment field.
+func (r *mutationResolver) AddComment(ctx context.Context, incidentID string, text string) (*model.Comment, error) {
+	uid := ctx.Value("userID")
+	if uid == nil {
+		return nil, errors.New("unauthorized")
+	}
+	userID := fmt.Sprintf("%v", uid)
+	if r.IncidentClient == nil {
+		return nil, errors.New("incident service unavailable")
+	}
+	resp, err := r.IncidentClient.AddComment(ctx, &incidentv1.AddCommentRequest{IncidentId: incidentID, Text: text, AuthorId: userID})
+	if err != nil {
+		return nil, err
+	}
+	return &model.Comment{ID: resp.GetId(), Text: resp.GetText(), CreatedAt: resp.GetCreatedAt()}, nil
+}
+
+// RegisterPushToken is the resolver for the registerPushToken field.
+func (r *mutationResolver) RegisterPushToken(ctx context.Context, token string) (*model.User, error) {
+	uid := ctx.Value("userID")
+	if uid == nil {
+		return nil, errors.New("unauthorized")
+	}
+	userID := fmt.Sprintf("%v", uid)
+	if r.AuthClient == nil {
+		return nil, errors.New("auth service unavailable")
+	}
+	resp, err := r.AuthClient.RegisterPushToken(ctx, &authv1.RegisterPushTokenRequest{UserId: userID, Token: token})
+	if err != nil {
+		return nil, err
+	}
+	return &model.User{ID: resp.GetId(), Email: resp.GetEmail(), Name: resp.GetName()}, nil
+}
+
 // Incidents is the resolver for the incidents field.
-func (r *queryResolver) Incidents(ctx context.Context) ([]model.Incident, error) {
+func (r *queryResolver) Incidents(ctx context.Context, status *string) ([]model.Incident, error) {
 	if uid := ctx.Value("userID"); uid == nil {
 		return nil, errors.New("unauthorized")
 	}
 	if r.IncidentClient == nil {
 		return nil, errors.New("incident service unavailable")
 	}
-	resp, err := r.IncidentClient.ListIncidents(ctx, &incidentv1.ListIncidentsRequest{Limit: 50})
+	req := &incidentv1.ListIncidentsRequest{Limit: 50}
+	if status != nil {
+		req.Status = *status
+	}
+	resp, err := r.IncidentClient.ListIncidents(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 	out := make([]model.Incident, 0, len(resp.GetIncidents()))
 	for _, it := range resp.GetIncidents() {
-		out = append(out, model.Incident{ID: it.GetId(), Title: it.GetTitle()})
+		var details *string
+		if it.GetDetails() != "" {
+			d := it.GetDetails()
+			details = &d
+		}
+		out = append(out, model.Incident{ID: it.GetId(), Title: it.GetTitle(), Severity: it.GetSeverity(), Status: it.GetStatus(), Details: details})
 	}
 	return out, nil
+}
+
+// Incident is the resolver for the incident field.
+func (r *queryResolver) Incident(ctx context.Context, id string) (*model.Incident, error) {
+	if r.IncidentClient == nil {
+		return nil, errors.New("incident service unavailable")
+	}
+	resp, err := r.IncidentClient.GetIncident(ctx, &incidentv1.GetIncidentRequest{Id: id})
+	if err != nil {
+		return nil, err
+	}
+	var details *string
+	if resp.GetDetails() != "" {
+		d := resp.GetDetails()
+		details = &d
+	}
+	return &model.Incident{ID: resp.GetId(), Title: resp.GetTitle(), Severity: resp.GetSeverity(), Status: resp.GetStatus(), Details: details}, nil
+}
+
+// Me is the resolver for the me field.
+func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
+	uid := ctx.Value("userID")
+	if uid == nil {
+		return nil, errors.New("unauthorized")
+	}
+	userID := fmt.Sprintf("%v", uid)
+	if r.AuthClient == nil {
+		return nil, errors.New("auth service unavailable")
+	}
+	resp, err := r.AuthClient.GetUser(ctx, &authv1.GetUserRequest{UserId: userID})
+	if err != nil {
+		return nil, err
+	}
+	return &model.User{ID: resp.GetId(), Email: resp.GetEmail(), Name: resp.GetName()}, nil
 }
 
 // OnNewIncident is the resolver for the onNewIncident field.
@@ -92,7 +173,77 @@ func (r *subscriptionResolver) OnNewIncident(ctx context.Context) (<-chan *model
 	return ch, nil
 }
 
-// JWT signing moved to auth-service.
+// OnIncidentUpdate is the resolver for the onIncidentUpdate field.
+func (r *subscriptionResolver) OnIncidentUpdate(ctx context.Context, incidentID string) (<-chan *model.Incident, error) {
+	ch := make(chan *model.Incident, 1)
+	pubsub := r.Redis.Subscribe(ctx, "incidents:updates")
+	if _, err := pubsub.Receive(ctx); err != nil {
+		return nil, err
+	}
+	go func() {
+		defer close(ch)
+		defer pubsub.Close()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case msg, ok := <-pubsub.Channel():
+				if !ok {
+					return
+				}
+				var data map[string]any
+				if err := json.Unmarshal([]byte(msg.Payload), &data); err != nil {
+					continue
+				}
+				// expect id numeric
+				var idStr string
+				switch v := data["id"].(type) {
+				case float64:
+					idStr = strconv.FormatInt(int64(v), 10)
+				case string:
+					idStr = v
+				default:
+					continue
+				}
+				if idStr != incidentID {
+					continue
+				}
+				// build Incident
+				inc := &model.Incident{ID: idStr}
+				if t, ok := data["title"].(string); ok {
+					inc.Title = t
+				}
+				if s, ok := data["severity"].(string); ok {
+					inc.Severity = s
+				}
+				if st, ok := data["status"].(string); ok {
+					inc.Status = st
+				}
+				if det, ok := data["details"].(string); ok {
+					inc.Details = &det
+				}
+				// comments
+				if cm, ok := data["comment"].(map[string]any); ok {
+					c := model.Comment{}
+					if idf, ok := cm["id"].(float64); ok {
+						c.ID = strconv.FormatInt(int64(idf), 10)
+					} else if ids, ok := cm["id"].(string); ok {
+						c.ID = ids
+					}
+					if text, ok := cm["text"].(string); ok {
+						c.Text = text
+					}
+					if ca, ok := cm["created_at"].(string); ok {
+						c.CreatedAt = ca
+					}
+					inc.Comments = append(inc.Comments, c)
+				}
+				ch <- inc
+			}
+		}
+	}()
+	return ch, nil
+}
 
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
@@ -106,3 +257,20 @@ func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subsc
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *mutationResolver) Register(ctx context.Context, email string, name string, password string) (*model.AuthPayload, error) {
+	if r.AuthClient == nil {
+		return nil, errors.New("auth service unavailable")
+	}
+	resp, err := r.AuthClient.Register(ctx, &authv1.RegisterRequest{Email: email, Name: name, Password: password})
+	if err != nil {
+		return nil, err
+	}
+	return &model.AuthPayload{Token: resp.GetJwtToken(), User: &model.User{ID: resp.GetUser().GetId(), Email: resp.GetUser().GetEmail(), Name: resp.GetUser().GetName()}}, nil
+}

@@ -25,6 +25,10 @@ type Incident struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Severity      string                 `protobuf:"bytes,3,opt,name=severity,proto3" json:"severity,omitempty"`
+	Status        string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
+	Details       string                 `protobuf:"bytes,5,opt,name=details,proto3" json:"details,omitempty"` // JSON string of the raw alert
+	AssigneeId    string                 `protobuf:"bytes,6,opt,name=assignee_id,json=assigneeId,proto3" json:"assignee_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -73,9 +77,38 @@ func (x *Incident) GetTitle() string {
 	return ""
 }
 
+func (x *Incident) GetSeverity() string {
+	if x != nil {
+		return x.Severity
+	}
+	return ""
+}
+
+func (x *Incident) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *Incident) GetDetails() string {
+	if x != nil {
+		return x.Details
+	}
+	return ""
+}
+
+func (x *Incident) GetAssigneeId() string {
+	if x != nil {
+		return x.AssigneeId
+	}
+	return ""
+}
+
 type ListIncidentsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Limit         int32                  `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"` // optional, server default 50
+	Limit         int32                  `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`  // optional, server default 50
+	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"` // optional filter
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -115,6 +148,13 @@ func (x *ListIncidentsRequest) GetLimit() int32 {
 		return x.Limit
 	}
 	return 0
+}
+
+func (x *ListIncidentsRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
 }
 
 type ListIncidentsResponse struct {
@@ -164,6 +204,8 @@ func (x *ListIncidentsResponse) GetIncidents() []*Incident {
 type CreateIncidentRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Title         string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	Severity      string                 `protobuf:"bytes,2,opt,name=severity,proto3" json:"severity,omitempty"`
+	Details       string                 `protobuf:"bytes,3,opt,name=details,proto3" json:"details,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -205,23 +247,281 @@ func (x *CreateIncidentRequest) GetTitle() string {
 	return ""
 }
 
+func (x *CreateIncidentRequest) GetSeverity() string {
+	if x != nil {
+		return x.Severity
+	}
+	return ""
+}
+
+func (x *CreateIncidentRequest) GetDetails() string {
+	if x != nil {
+		return x.Details
+	}
+	return ""
+}
+
+type GetIncidentRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetIncidentRequest) Reset() {
+	*x = GetIncidentRequest{}
+	mi := &file_incident_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetIncidentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetIncidentRequest) ProtoMessage() {}
+
+func (x *GetIncidentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_incident_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetIncidentRequest.ProtoReflect.Descriptor instead.
+func (*GetIncidentRequest) Descriptor() ([]byte, []int) {
+	return file_incident_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GetIncidentRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type AddCommentRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	IncidentId    string                 `protobuf:"bytes,1,opt,name=incident_id,json=incidentId,proto3" json:"incident_id,omitempty"`
+	Text          string                 `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
+	AuthorId      string                 `protobuf:"bytes,3,opt,name=author_id,json=authorId,proto3" json:"author_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddCommentRequest) Reset() {
+	*x = AddCommentRequest{}
+	mi := &file_incident_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddCommentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddCommentRequest) ProtoMessage() {}
+
+func (x *AddCommentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_incident_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddCommentRequest.ProtoReflect.Descriptor instead.
+func (*AddCommentRequest) Descriptor() ([]byte, []int) {
+	return file_incident_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *AddCommentRequest) GetIncidentId() string {
+	if x != nil {
+		return x.IncidentId
+	}
+	return ""
+}
+
+func (x *AddCommentRequest) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
+func (x *AddCommentRequest) GetAuthorId() string {
+	if x != nil {
+		return x.AuthorId
+	}
+	return ""
+}
+
+type Comment struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Text          string                 `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
+	AuthorId      string                 `protobuf:"bytes,3,opt,name=author_id,json=authorId,proto3" json:"author_id,omitempty"`
+	CreatedAt     string                 `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Comment) Reset() {
+	*x = Comment{}
+	mi := &file_incident_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Comment) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Comment) ProtoMessage() {}
+
+func (x *Comment) ProtoReflect() protoreflect.Message {
+	mi := &file_incident_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Comment.ProtoReflect.Descriptor instead.
+func (*Comment) Descriptor() ([]byte, []int) {
+	return file_incident_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *Comment) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Comment) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
+func (x *Comment) GetAuthorId() string {
+	if x != nil {
+		return x.AuthorId
+	}
+	return ""
+}
+
+func (x *Comment) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+type AcknowledgeIncidentRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	IncidentId    string                 `protobuf:"bytes,1,opt,name=incident_id,json=incidentId,proto3" json:"incident_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AcknowledgeIncidentRequest) Reset() {
+	*x = AcknowledgeIncidentRequest{}
+	mi := &file_incident_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AcknowledgeIncidentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AcknowledgeIncidentRequest) ProtoMessage() {}
+
+func (x *AcknowledgeIncidentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_incident_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AcknowledgeIncidentRequest.ProtoReflect.Descriptor instead.
+func (*AcknowledgeIncidentRequest) Descriptor() ([]byte, []int) {
+	return file_incident_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *AcknowledgeIncidentRequest) GetIncidentId() string {
+	if x != nil {
+		return x.IncidentId
+	}
+	return ""
+}
+
 var File_incident_proto protoreflect.FileDescriptor
 
 const file_incident_proto_rawDesc = "" +
 	"\n" +
-	"\x0eincident.proto\x12\vincident.v1\"0\n" +
+	"\x0eincident.proto\x12\vincident.v1\"\x9f\x01\n" +
 	"\bIncident\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\",\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1a\n" +
+	"\bseverity\x18\x03 \x01(\tR\bseverity\x12\x16\n" +
+	"\x06status\x18\x04 \x01(\tR\x06status\x12\x18\n" +
+	"\adetails\x18\x05 \x01(\tR\adetails\x12\x1f\n" +
+	"\vassignee_id\x18\x06 \x01(\tR\n" +
+	"assigneeId\"D\n" +
 	"\x14ListIncidentsRequest\x12\x14\n" +
-	"\x05limit\x18\x01 \x01(\x05R\x05limit\"L\n" +
+	"\x05limit\x18\x01 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\"L\n" +
 	"\x15ListIncidentsResponse\x123\n" +
-	"\tincidents\x18\x01 \x03(\v2\x15.incident.v1.IncidentR\tincidents\"-\n" +
+	"\tincidents\x18\x01 \x03(\v2\x15.incident.v1.IncidentR\tincidents\"c\n" +
 	"\x15CreateIncidentRequest\x12\x14\n" +
-	"\x05title\x18\x01 \x01(\tR\x05title2\xb6\x01\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x1a\n" +
+	"\bseverity\x18\x02 \x01(\tR\bseverity\x12\x18\n" +
+	"\adetails\x18\x03 \x01(\tR\adetails\"$\n" +
+	"\x12GetIncidentRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"e\n" +
+	"\x11AddCommentRequest\x12\x1f\n" +
+	"\vincident_id\x18\x01 \x01(\tR\n" +
+	"incidentId\x12\x12\n" +
+	"\x04text\x18\x02 \x01(\tR\x04text\x12\x1b\n" +
+	"\tauthor_id\x18\x03 \x01(\tR\bauthorId\"i\n" +
+	"\aComment\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04text\x18\x02 \x01(\tR\x04text\x12\x1b\n" +
+	"\tauthor_id\x18\x03 \x01(\tR\bauthorId\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x04 \x01(\tR\tcreatedAt\"=\n" +
+	"\x1aAcknowledgeIncidentRequest\x12\x1f\n" +
+	"\vincident_id\x18\x01 \x01(\tR\n" +
+	"incidentId2\x98\x03\n" +
 	"\x0fIncidentService\x12V\n" +
-	"\rListIncidents\x12!.incident.v1.ListIncidentsRequest\x1a\".incident.v1.ListIncidentsResponse\x12K\n" +
-	"\x0eCreateIncident\x12\".incident.v1.CreateIncidentRequest\x1a\x15.incident.v1.IncidentB-Z+watchtower/proto/gen/incident/v1;incidentv1b\x06proto3"
+	"\rListIncidents\x12!.incident.v1.ListIncidentsRequest\x1a\".incident.v1.ListIncidentsResponse\x12E\n" +
+	"\vGetIncident\x12\x1f.incident.v1.GetIncidentRequest\x1a\x15.incident.v1.Incident\x12K\n" +
+	"\x0eCreateIncident\x12\".incident.v1.CreateIncidentRequest\x1a\x15.incident.v1.Incident\x12U\n" +
+	"\x13AcknowledgeIncident\x12'.incident.v1.AcknowledgeIncidentRequest\x1a\x15.incident.v1.Incident\x12B\n" +
+	"\n" +
+	"AddComment\x12\x1e.incident.v1.AddCommentRequest\x1a\x14.incident.v1.CommentB-Z+watchtower/proto/gen/incident/v1;incidentv1b\x06proto3"
 
 var (
 	file_incident_proto_rawDescOnce sync.Once
@@ -235,21 +535,31 @@ func file_incident_proto_rawDescGZIP() []byte {
 	return file_incident_proto_rawDescData
 }
 
-var file_incident_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_incident_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_incident_proto_goTypes = []any{
-	(*Incident)(nil),              // 0: incident.v1.Incident
-	(*ListIncidentsRequest)(nil),  // 1: incident.v1.ListIncidentsRequest
-	(*ListIncidentsResponse)(nil), // 2: incident.v1.ListIncidentsResponse
-	(*CreateIncidentRequest)(nil), // 3: incident.v1.CreateIncidentRequest
+	(*Incident)(nil),                   // 0: incident.v1.Incident
+	(*ListIncidentsRequest)(nil),       // 1: incident.v1.ListIncidentsRequest
+	(*ListIncidentsResponse)(nil),      // 2: incident.v1.ListIncidentsResponse
+	(*CreateIncidentRequest)(nil),      // 3: incident.v1.CreateIncidentRequest
+	(*GetIncidentRequest)(nil),         // 4: incident.v1.GetIncidentRequest
+	(*AddCommentRequest)(nil),          // 5: incident.v1.AddCommentRequest
+	(*Comment)(nil),                    // 6: incident.v1.Comment
+	(*AcknowledgeIncidentRequest)(nil), // 7: incident.v1.AcknowledgeIncidentRequest
 }
 var file_incident_proto_depIdxs = []int32{
 	0, // 0: incident.v1.ListIncidentsResponse.incidents:type_name -> incident.v1.Incident
 	1, // 1: incident.v1.IncidentService.ListIncidents:input_type -> incident.v1.ListIncidentsRequest
-	3, // 2: incident.v1.IncidentService.CreateIncident:input_type -> incident.v1.CreateIncidentRequest
-	2, // 3: incident.v1.IncidentService.ListIncidents:output_type -> incident.v1.ListIncidentsResponse
-	0, // 4: incident.v1.IncidentService.CreateIncident:output_type -> incident.v1.Incident
-	3, // [3:5] is the sub-list for method output_type
-	1, // [1:3] is the sub-list for method input_type
+	4, // 2: incident.v1.IncidentService.GetIncident:input_type -> incident.v1.GetIncidentRequest
+	3, // 3: incident.v1.IncidentService.CreateIncident:input_type -> incident.v1.CreateIncidentRequest
+	7, // 4: incident.v1.IncidentService.AcknowledgeIncident:input_type -> incident.v1.AcknowledgeIncidentRequest
+	5, // 5: incident.v1.IncidentService.AddComment:input_type -> incident.v1.AddCommentRequest
+	2, // 6: incident.v1.IncidentService.ListIncidents:output_type -> incident.v1.ListIncidentsResponse
+	0, // 7: incident.v1.IncidentService.GetIncident:output_type -> incident.v1.Incident
+	0, // 8: incident.v1.IncidentService.CreateIncident:output_type -> incident.v1.Incident
+	0, // 9: incident.v1.IncidentService.AcknowledgeIncident:output_type -> incident.v1.Incident
+	6, // 10: incident.v1.IncidentService.AddComment:output_type -> incident.v1.Comment
+	6, // [6:11] is the sub-list for method output_type
+	1, // [1:6] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -266,7 +576,7 @@ func file_incident_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_incident_proto_rawDesc), len(file_incident_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

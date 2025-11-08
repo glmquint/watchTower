@@ -1,13 +1,4 @@
-# GraphQL schema for WatchTower PoC
-
-type Incident {
-  id: ID!
-  title: String!
-}
-
-type Query {
-  incidents: [Incident!]!
-}
+# GraphQL schema for WatchTower (updated)
 
 type User {
   id: ID!
@@ -15,16 +6,42 @@ type User {
   name: String!
 }
 
+type Comment {
+  id: ID!
+  text: String!
+  author: User
+  createdAt: String!
+}
+
+type Incident {
+  id: ID!
+  title: String!
+  severity: String!
+  status: String!
+  details: String
+  assignee: User
+  comments: [Comment!]
+}
+
 type AuthPayload {
   token: String!
   user: User!
 }
 
+type Query {
+  incidents(status: String): [Incident!]
+  incident(id: ID!): Incident
+  me: User
+}
+
 type Mutation {
-  register(email: String!, name: String!, password: String!): AuthPayload!
   login(email: String!, password: String!): AuthPayload!
+  acknowledgeIncident(incidentId: ID!): Incident!
+  addComment(incidentId: ID!, text: String!): Comment!
+  registerPushToken(token: String!): User
 }
 
 type Subscription {
   onNewIncident: Incident!
+  onIncidentUpdate(incidentId: ID!): Incident!
 }

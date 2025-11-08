@@ -341,6 +341,102 @@ func (x *ValidateTokenResponse) GetUserId() string {
 	return ""
 }
 
+type RegisterPushTokenRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Token         string                 `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RegisterPushTokenRequest) Reset() {
+	*x = RegisterPushTokenRequest{}
+	mi := &file_auth_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegisterPushTokenRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterPushTokenRequest) ProtoMessage() {}
+
+func (x *RegisterPushTokenRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterPushTokenRequest.ProtoReflect.Descriptor instead.
+func (*RegisterPushTokenRequest) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *RegisterPushTokenRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *RegisterPushTokenRequest) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+type GetUserRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserRequest) Reset() {
+	*x = GetUserRequest{}
+	mi := &file_auth_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserRequest) ProtoMessage() {}
+
+func (x *GetUserRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserRequest.ProtoReflect.Descriptor instead.
+func (*GetUserRequest) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetUserRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
 var File_auth_proto protoreflect.FileDescriptor
 
 const file_auth_proto_rawDesc = "" +
@@ -365,11 +461,18 @@ const file_auth_proto_rawDesc = "" +
 	"\tjwt_token\x18\x01 \x01(\tR\bjwtToken\"F\n" +
 	"\x15ValidateTokenResponse\x12\x14\n" +
 	"\x05valid\x18\x01 \x01(\bR\x05valid\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\tR\x06userId2\xd1\x01\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\"I\n" +
+	"\x18RegisterPushTokenRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x14\n" +
+	"\x05token\x18\x02 \x01(\tR\x05token\")\n" +
+	"\x0eGetUserRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId2\xcb\x02\n" +
 	"\vAuthService\x12;\n" +
 	"\bRegister\x12\x18.auth.v1.RegisterRequest\x1a\x15.auth.v1.AuthResponse\x125\n" +
 	"\x05Login\x12\x15.auth.v1.LoginRequest\x1a\x15.auth.v1.AuthResponse\x12N\n" +
-	"\rValidateToken\x12\x1d.auth.v1.ValidateTokenRequest\x1a\x1e.auth.v1.ValidateTokenResponseB%Z#watchtower/proto/gen/auth/v1;authv1b\x06proto3"
+	"\rValidateToken\x12\x1d.auth.v1.ValidateTokenRequest\x1a\x1e.auth.v1.ValidateTokenResponse\x12E\n" +
+	"\x11RegisterPushToken\x12!.auth.v1.RegisterPushTokenRequest\x1a\r.auth.v1.User\x121\n" +
+	"\aGetUser\x12\x17.auth.v1.GetUserRequest\x1a\r.auth.v1.UserB%Z#watchtower/proto/gen/auth/v1;authv1b\x06proto3"
 
 var (
 	file_auth_proto_rawDescOnce sync.Once
@@ -383,25 +486,31 @@ func file_auth_proto_rawDescGZIP() []byte {
 	return file_auth_proto_rawDescData
 }
 
-var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_auth_proto_goTypes = []any{
-	(*User)(nil),                  // 0: auth.v1.User
-	(*RegisterRequest)(nil),       // 1: auth.v1.RegisterRequest
-	(*LoginRequest)(nil),          // 2: auth.v1.LoginRequest
-	(*AuthResponse)(nil),          // 3: auth.v1.AuthResponse
-	(*ValidateTokenRequest)(nil),  // 4: auth.v1.ValidateTokenRequest
-	(*ValidateTokenResponse)(nil), // 5: auth.v1.ValidateTokenResponse
+	(*User)(nil),                     // 0: auth.v1.User
+	(*RegisterRequest)(nil),          // 1: auth.v1.RegisterRequest
+	(*LoginRequest)(nil),             // 2: auth.v1.LoginRequest
+	(*AuthResponse)(nil),             // 3: auth.v1.AuthResponse
+	(*ValidateTokenRequest)(nil),     // 4: auth.v1.ValidateTokenRequest
+	(*ValidateTokenResponse)(nil),    // 5: auth.v1.ValidateTokenResponse
+	(*RegisterPushTokenRequest)(nil), // 6: auth.v1.RegisterPushTokenRequest
+	(*GetUserRequest)(nil),           // 7: auth.v1.GetUserRequest
 }
 var file_auth_proto_depIdxs = []int32{
 	0, // 0: auth.v1.AuthResponse.user:type_name -> auth.v1.User
 	1, // 1: auth.v1.AuthService.Register:input_type -> auth.v1.RegisterRequest
 	2, // 2: auth.v1.AuthService.Login:input_type -> auth.v1.LoginRequest
 	4, // 3: auth.v1.AuthService.ValidateToken:input_type -> auth.v1.ValidateTokenRequest
-	3, // 4: auth.v1.AuthService.Register:output_type -> auth.v1.AuthResponse
-	3, // 5: auth.v1.AuthService.Login:output_type -> auth.v1.AuthResponse
-	5, // 6: auth.v1.AuthService.ValidateToken:output_type -> auth.v1.ValidateTokenResponse
-	4, // [4:7] is the sub-list for method output_type
-	1, // [1:4] is the sub-list for method input_type
+	6, // 4: auth.v1.AuthService.RegisterPushToken:input_type -> auth.v1.RegisterPushTokenRequest
+	7, // 5: auth.v1.AuthService.GetUser:input_type -> auth.v1.GetUserRequest
+	3, // 6: auth.v1.AuthService.Register:output_type -> auth.v1.AuthResponse
+	3, // 7: auth.v1.AuthService.Login:output_type -> auth.v1.AuthResponse
+	5, // 8: auth.v1.AuthService.ValidateToken:output_type -> auth.v1.ValidateTokenResponse
+	0, // 9: auth.v1.AuthService.RegisterPushToken:output_type -> auth.v1.User
+	0, // 10: auth.v1.AuthService.GetUser:output_type -> auth.v1.User
+	6, // [6:11] is the sub-list for method output_type
+	1, // [1:6] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -418,7 +527,7 @@ func file_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auth_proto_rawDesc), len(file_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

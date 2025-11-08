@@ -19,8 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	IncidentService_ListIncidents_FullMethodName  = "/incident.v1.IncidentService/ListIncidents"
-	IncidentService_CreateIncident_FullMethodName = "/incident.v1.IncidentService/CreateIncident"
+	IncidentService_ListIncidents_FullMethodName       = "/incident.v1.IncidentService/ListIncidents"
+	IncidentService_GetIncident_FullMethodName         = "/incident.v1.IncidentService/GetIncident"
+	IncidentService_CreateIncident_FullMethodName      = "/incident.v1.IncidentService/CreateIncident"
+	IncidentService_AcknowledgeIncident_FullMethodName = "/incident.v1.IncidentService/AcknowledgeIncident"
+	IncidentService_AddComment_FullMethodName          = "/incident.v1.IncidentService/AddComment"
 )
 
 // IncidentServiceClient is the client API for IncidentService service.
@@ -28,7 +31,10 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type IncidentServiceClient interface {
 	ListIncidents(ctx context.Context, in *ListIncidentsRequest, opts ...grpc.CallOption) (*ListIncidentsResponse, error)
+	GetIncident(ctx context.Context, in *GetIncidentRequest, opts ...grpc.CallOption) (*Incident, error)
 	CreateIncident(ctx context.Context, in *CreateIncidentRequest, opts ...grpc.CallOption) (*Incident, error)
+	AcknowledgeIncident(ctx context.Context, in *AcknowledgeIncidentRequest, opts ...grpc.CallOption) (*Incident, error)
+	AddComment(ctx context.Context, in *AddCommentRequest, opts ...grpc.CallOption) (*Comment, error)
 }
 
 type incidentServiceClient struct {
@@ -49,10 +55,40 @@ func (c *incidentServiceClient) ListIncidents(ctx context.Context, in *ListIncid
 	return out, nil
 }
 
+func (c *incidentServiceClient) GetIncident(ctx context.Context, in *GetIncidentRequest, opts ...grpc.CallOption) (*Incident, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Incident)
+	err := c.cc.Invoke(ctx, IncidentService_GetIncident_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *incidentServiceClient) CreateIncident(ctx context.Context, in *CreateIncidentRequest, opts ...grpc.CallOption) (*Incident, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Incident)
 	err := c.cc.Invoke(ctx, IncidentService_CreateIncident_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *incidentServiceClient) AcknowledgeIncident(ctx context.Context, in *AcknowledgeIncidentRequest, opts ...grpc.CallOption) (*Incident, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Incident)
+	err := c.cc.Invoke(ctx, IncidentService_AcknowledgeIncident_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *incidentServiceClient) AddComment(ctx context.Context, in *AddCommentRequest, opts ...grpc.CallOption) (*Comment, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Comment)
+	err := c.cc.Invoke(ctx, IncidentService_AddComment_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +100,10 @@ func (c *incidentServiceClient) CreateIncident(ctx context.Context, in *CreateIn
 // for forward compatibility.
 type IncidentServiceServer interface {
 	ListIncidents(context.Context, *ListIncidentsRequest) (*ListIncidentsResponse, error)
+	GetIncident(context.Context, *GetIncidentRequest) (*Incident, error)
 	CreateIncident(context.Context, *CreateIncidentRequest) (*Incident, error)
+	AcknowledgeIncident(context.Context, *AcknowledgeIncidentRequest) (*Incident, error)
+	AddComment(context.Context, *AddCommentRequest) (*Comment, error)
 	mustEmbedUnimplementedIncidentServiceServer()
 }
 
@@ -78,8 +117,17 @@ type UnimplementedIncidentServiceServer struct{}
 func (UnimplementedIncidentServiceServer) ListIncidents(context.Context, *ListIncidentsRequest) (*ListIncidentsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListIncidents not implemented")
 }
+func (UnimplementedIncidentServiceServer) GetIncident(context.Context, *GetIncidentRequest) (*Incident, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetIncident not implemented")
+}
 func (UnimplementedIncidentServiceServer) CreateIncident(context.Context, *CreateIncidentRequest) (*Incident, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateIncident not implemented")
+}
+func (UnimplementedIncidentServiceServer) AcknowledgeIncident(context.Context, *AcknowledgeIncidentRequest) (*Incident, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AcknowledgeIncident not implemented")
+}
+func (UnimplementedIncidentServiceServer) AddComment(context.Context, *AddCommentRequest) (*Comment, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddComment not implemented")
 }
 func (UnimplementedIncidentServiceServer) mustEmbedUnimplementedIncidentServiceServer() {}
 func (UnimplementedIncidentServiceServer) testEmbeddedByValue()                         {}
@@ -120,6 +168,24 @@ func _IncidentService_ListIncidents_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _IncidentService_GetIncident_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetIncidentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IncidentServiceServer).GetIncident(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IncidentService_GetIncident_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IncidentServiceServer).GetIncident(ctx, req.(*GetIncidentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _IncidentService_CreateIncident_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateIncidentRequest)
 	if err := dec(in); err != nil {
@@ -138,6 +204,42 @@ func _IncidentService_CreateIncident_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _IncidentService_AcknowledgeIncident_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AcknowledgeIncidentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IncidentServiceServer).AcknowledgeIncident(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IncidentService_AcknowledgeIncident_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IncidentServiceServer).AcknowledgeIncident(ctx, req.(*AcknowledgeIncidentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IncidentService_AddComment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddCommentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IncidentServiceServer).AddComment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IncidentService_AddComment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IncidentServiceServer).AddComment(ctx, req.(*AddCommentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // IncidentService_ServiceDesc is the grpc.ServiceDesc for IncidentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -150,8 +252,20 @@ var IncidentService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _IncidentService_ListIncidents_Handler,
 		},
 		{
+			MethodName: "GetIncident",
+			Handler:    _IncidentService_GetIncident_Handler,
+		},
+		{
 			MethodName: "CreateIncident",
 			Handler:    _IncidentService_CreateIncident_Handler,
+		},
+		{
+			MethodName: "AcknowledgeIncident",
+			Handler:    _IncidentService_AcknowledgeIncident_Handler,
+		},
+		{
+			MethodName: "AddComment",
+			Handler:    _IncidentService_AddComment_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

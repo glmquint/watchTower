@@ -7,9 +7,21 @@ type AuthPayload struct {
 	User  *User  `json:"user"`
 }
 
+type Comment struct {
+	ID        string `json:"id"`
+	Text      string `json:"text"`
+	Author    *User  `json:"author,omitempty"`
+	CreatedAt string `json:"createdAt"`
+}
+
 type Incident struct {
-	ID    string `json:"id"`
-	Title string `json:"title"`
+	ID       string    `json:"id"`
+	Title    string    `json:"title"`
+	Severity string    `json:"severity"`
+	Status   string    `json:"status"`
+	Details  *string   `json:"details,omitempty"`
+	Assignee *User     `json:"assignee,omitempty"`
+	Comments []Comment `json:"comments,omitempty"`
 }
 
 type Mutation struct {

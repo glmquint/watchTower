@@ -22,6 +22,33 @@ type authServer struct {
 	jwtSecret string
 }
 
+func (s *authServer) RegisterPushToken(ctx context.Context, req *authv1.RegisterPushTokenRequest) (*authv1.User, error) {
+	if req.GetUserId() == "" || req.GetToken() == "" {
+		return nil, grpc.Errorf(3, "user_id and token required")
+	}
+	if _, err := s.db.Exec(ctx, `UPDATE users SET push_token=$1 WHERE id=$2`, req.GetToken(), req.GetUserId()); err != nil {
+		return nil, err
+	}
+	var id int64
+	var email, name string
+	if err := s.db.QueryRow(ctx, `SELECT id, email, name FROM users WHERE id=$1`, req.GetUserId()).Scan(&id, &email, &name); err != nil {
+		return nil, err
+	}
+	return &authv1.User{Id: strconv.FormatInt(id, 10), Email: email, Name: name}, nil
+}
+
+func (s *authServer) GetUser(ctx context.Context, req *authv1.GetUserRequest) (*authv1.User, error) {
+	if req.GetUserId() == "" {
+		return nil, grpc.Errorf(3, "user_id required")
+	}
+	var id int64
+	var email, name string
+	if err := s.db.QueryRow(ctx, `SELECT id, email, name FROM users WHERE id=$1`, req.GetUserId()).Scan(&id, &email, &name); err != nil {
+		return nil, err
+	}
+	return &authv1.User{Id: strconv.FormatInt(id, 10), Email: email, Name: name}, nil
+}
+
 func (s *authServer) Register(ctx context.Context, req *authv1.RegisterRequest) (*authv1.AuthResponse, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.GetPassword()), bcrypt.DefaultCost)
 	if err != nil {
@@ -84,6 +111,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to connect to postgres: %v", err)
 	}
+	// ensure users table exists for dev
+	if err := ensureUserSchema(pool); err != nil {
+		log.Fatalf("failed to ensure user schema: %v", err)
+	}
 	defer pool.Close()
 
 	addr := ":50051"
@@ -97,6 +128,19 @@ func main() {
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("server failed: %v", err)
 	}
+}
+
+func ensureUserSchema(pool *pgxpool.Pool) error {
+	ctx := context.Background()
+	_, err := pool.Exec(ctx, `
+	CREATE TABLE IF NOT EXISTS users (
+		id SERIAL PRIMARY KEY,
+		email TEXT UNIQUE NOT NULL,
+		name TEXT,
+		password_hash TEXT,
+		push_token TEXT
+	)`)
+	return err
 }
 
 func dbConfigFromEnv() string {
