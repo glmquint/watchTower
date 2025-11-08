@@ -6,14 +6,62 @@ package graph
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"strconv"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 
 	"watchtower/api/graph/generated"
 	"watchtower/api/graph/model"
 )
 
+// Register is the resolver for the register field.
+func (r *mutationResolver) Register(ctx context.Context, email string, name string, password string) (*model.AuthPayload, error) {
+	// hash password
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+	// create user
+	var id int64
+	err = r.DB.QueryRow(ctx, `INSERT INTO users (email, name, password_hash) VALUES ($1,$2,$3) RETURNING id`, email, name, string(hash)).Scan(&id)
+	if err != nil {
+		return nil, err
+	}
+	token, err := r.signToken(strconv.FormatInt(id, 10))
+	if err != nil {
+		return nil, err
+	}
+	return &model.AuthPayload{Token: token, User: &model.User{ID: strconv.FormatInt(id, 10), Email: email, Name: name}}, nil
+}
+
+// Login is the resolver for the login field.
+func (r *mutationResolver) Login(ctx context.Context, email string, password string) (*model.AuthPayload, error) {
+	var id int64
+	var name string
+	var hash string
+	err := r.DB.QueryRow(ctx, `SELECT id, name, password_hash FROM users WHERE email=$1`, email).Scan(&id, &name, &hash)
+	if err != nil {
+		return nil, errors.New("invalid credentials")
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)); err != nil {
+		return nil, errors.New("invalid credentials")
+	}
+	token, err := r.signToken(strconv.FormatInt(id, 10))
+	if err != nil {
+		return nil, err
+	}
+	return &model.AuthPayload{Token: token, User: &model.User{ID: strconv.FormatInt(id, 10), Email: email, Name: name}}, nil
+}
+
 // Incidents is the resolver for the incidents field.
 func (r *queryResolver) Incidents(ctx context.Context) ([]model.Incident, error) {
+	if uid := ctx.Value("userID"); uid == nil {
+		return nil, errors.New("unauthorized")
+	}
 	rows, err := r.DB.Query(ctx, `SELECT id, title FROM incidents ORDER BY id ASC LIMIT 50`)
 	if err != nil {
 		return nil, err
@@ -38,7 +86,57 @@ func (r *queryResolver) Incidents(ctx context.Context) ([]model.Incident, error)
 	return out, nil
 }
 
+// OnNewIncident is the resolver for the onNewIncident field.
+func (r *subscriptionResolver) OnNewIncident(ctx context.Context) (<-chan *model.Incident, error) {
+	ch := make(chan *model.Incident, 1)
+	pubsub := r.Redis.Subscribe(ctx, "incidents:new")
+	// ensure subscription started
+	if _, err := pubsub.Receive(ctx); err != nil {
+		return nil, err
+	}
+	go func() {
+		defer close(ch)
+		defer pubsub.Close()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case msg, ok := <-pubsub.Channel():
+				if !ok {
+					return
+				}
+				var m struct {
+					ID    int64  `json:"id"`
+					Title string `json:"title"`
+				}
+				if err := json.Unmarshal([]byte(msg.Payload), &m); err == nil {
+					ch <- &model.Incident{ID: strconv.FormatInt(m.ID, 10), Title: m.Title}
+				}
+			}
+		}
+	}()
+	return ch, nil
+}
+
+func (r *Resolver) signToken(userID string) (string, error) {
+	claims := jwt.MapClaims{
+		"sub": userID,
+		"exp": time.Now().Add(24 * time.Hour).Unix(),
+		"iat": time.Now().Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(r.JWTSecret))
+}
+
+// Mutation returns generated.MutationResolver implementation.
+func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+// Subscription returns generated.SubscriptionResolver implementation.
+func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subscriptionResolver{r} }
+
+type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type subscriptionResolver struct{ *Resolver }

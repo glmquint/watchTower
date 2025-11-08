@@ -2,10 +2,27 @@
 
 package model
 
+type AuthPayload struct {
+	Token string `json:"token"`
+	User  *User  `json:"user"`
+}
+
 type Incident struct {
 	ID    string `json:"id"`
 	Title string `json:"title"`
 }
 
+type Mutation struct {
+}
+
 type Query struct {
+}
+
+type Subscription struct {
+}
+
+type User struct {
+	ID    string `json:"id"`
+	Email string `json:"email"`
+	Name  string `json:"name"`
 }

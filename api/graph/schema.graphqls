@@ -8,3 +8,23 @@ type Incident {
 type Query {
   incidents: [Incident!]!
 }
+
+type User {
+  id: ID!
+  email: String!
+  name: String!
+}
+
+type AuthPayload {
+  token: String!
+  user: User!
+}
+
+type Mutation {
+  register(email: String!, name: String!, password: String!): AuthPayload!
+  login(email: String!, password: String!): AuthPayload!
+}
+
+type Subscription {
+  onNewIncident: Incident!
+}
