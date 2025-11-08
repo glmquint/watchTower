@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package incident.v1;
+
+option go_package = "watchtower/proto/gen/incident/v1;incidentv1";
+
+message Incident {
+  string id = 1;
+  string title = 2;
+}
+
+message ListIncidentsRequest {
+  int32 limit = 1; // optional, server default 50
+}
+
+message ListIncidentsResponse {
+  repeated Incident incidents = 1;
+}
+
+message CreateIncidentRequest {
+  string title = 1;
+}
+
+service IncidentService {
+  rpc ListIncidents (ListIncidentsRequest) returns (ListIncidentsResponse);
+  rpc CreateIncident (CreateIncidentRequest) returns (Incident);
+}

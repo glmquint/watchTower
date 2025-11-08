@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package auth.v1;
+
+option go_package = "watchtower/proto/gen/auth/v1;authv1";
+
+message User {
+  string id = 1;
+  string email = 2;
+  string name = 3;
+}
+
+message RegisterRequest {
+  string email = 1;
+  string name = 2;
+  string password = 3;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message AuthResponse {
+  string jwt_token = 1;
+  User user = 2;
+}
+
+message ValidateTokenRequest {
+  string jwt_token = 1;
+}
+
+message ValidateTokenResponse {
+  bool valid = 1;
+  string user_id = 2; // present if valid
+}
+
+service AuthService {
+  rpc Register (RegisterRequest) returns (AuthResponse);
+  rpc Login (LoginRequest) returns (AuthResponse);
+  rpc ValidateToken (ValidateTokenRequest) returns (ValidateTokenResponse);
+}

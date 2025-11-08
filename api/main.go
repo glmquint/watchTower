@@ -11,28 +11,45 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
+	authv1 "watchtower/proto/gen/auth/v1"
+	incidentv1 "watchtower/proto/gen/incident/v1"
 
 	"watchtower/api/graph"
 	"watchtower/api/graph/generated"
 )
 
 func main() {
-	cfg := dbConfigFromEnv()
-	pool, err := pgxpool.New(context.Background(), cfg)
-	if err != nil {
-		log.Fatalf("failed to connect to postgres: %v", err)
-	}
-	defer pool.Close()
-
 	redisAddr := getenv("REDIS_ADDR", "localhost:6379")
 	rdb := redis.NewClient(&redis.Options{Addr: redisAddr})
 	if err := rdb.Ping(context.Background()).Err(); err != nil {
 		log.Fatalf("failed to connect to redis: %v", err)
 	}
 
-	resolvers := &graph.Resolver{DB: pool, Redis: rdb, JWTSecret: getenv("JWT_SECRET", "dev-secret-change")}
+	// gRPC clients
+	authAddr := getenv("AUTH_ADDR", "localhost:50051")
+	incAddr := getenv("INCIDENT_ADDR", "localhost:50052")
+
+	authConn, err := grpc.Dial(authAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("failed to dial auth service: %v", err)
+	}
+	defer authConn.Close()
+	incConn, err := grpc.Dial(incAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("failed to dial incident service: %v", err)
+	}
+	defer incConn.Close()
+
+	resolvers := &graph.Resolver{
+		Redis:          rdb,
+		JWTSecret:      getenv("JWT_SECRET", "dev-secret-change"),
+		AuthClient:     authv1.NewAuthServiceClient(authConn),
+		IncidentClient: incidentv1.NewIncidentServiceClient(incConn),
+	}
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers}))
 
 	http.Handle("/query", corsMiddleware(authMiddleware(resolvers.JWTSecret, srv)))
@@ -47,18 +64,14 @@ func main() {
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": "provide {title}"})
 			return
 		}
-		var id int64
-		if err := pool.QueryRow(r.Context(), `INSERT INTO incidents (title) VALUES ($1) RETURNING id`, p.Title).Scan(&id); err != nil {
+		// Delegate creation to incident-service (it will publish to Redis)
+		resp, err := resolvers.IncidentClient.CreateIncident(r.Context(), &incidentv1.CreateIncidentRequest{Title: p.Title})
+		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		msg := map[string]any{"id": id, "title": p.Title}
-		b, _ := json.Marshal(msg)
-		if err := rdb.Publish(r.Context(), "incidents:new", string(b)).Err(); err != nil {
-			log.Printf("publish error: %v", err)
-		}
-		_ = json.NewEncoder(w).Encode(msg)
+		_ = json.NewEncoder(w).Encode(map[string]any{"id": resp.GetId(), "title": resp.GetTitle()})
 	})
 
 	addr := ":8080"
@@ -80,15 +93,6 @@ func main() {
 	if err := http.ListenAndServe("0.0.0.0:8080", nil); err != nil {
 		log.Fatalf("server failed: %v", err)
 	}
-}
-
-func dbConfigFromEnv() string {
-	host := getenv("DB_HOST", "localhost")
-	port := getenv("DB_PORT", "5432")
-	user := getenv("DB_USER", "watchtower")
-	pass := getenv("DB_PASSWORD", "watchtower")
-	name := getenv("DB_NAME", "watchtower")
-	return "postgres://" + user + ":" + pass + "@" + host + ":" + port + "/" + name + "?sslmode=disable"
 }
 
 func getenv(key, def string) string {

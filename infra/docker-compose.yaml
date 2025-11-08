@@ -30,6 +30,39 @@ services:
     volumes:
       - redisdata:/data
 
+  auth-service:
+    build: ../services/auth-service
+    container_name: wt_auth_service
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: watchtower
+      DB_PASSWORD: watchtower
+      DB_NAME: watchtower
+      JWT_SECRET: dev-secret-change
+    depends_on:
+      - postgres
+    ports:
+      - "50051:50051"
+
+  incident-service:
+    build: ../services/incident-service
+    container_name: wt_incident_service
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: watchtower
+      DB_PASSWORD: watchtower
+      DB_NAME: watchtower
+      REDIS_ADDR: redis:6379
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "50052:50052"
+
 volumes:
   pgdata:
   redisdata:

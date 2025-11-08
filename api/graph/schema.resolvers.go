@@ -9,10 +9,9 @@ import (
 	"encoding/json"
 	"errors"
 	"strconv"
-	"time"
 
-	"github.com/golang-jwt/jwt/v5"
-	"golang.org/x/crypto/bcrypt"
+	authv1 "watchtower/proto/gen/auth/v1"
+	incidentv1 "watchtower/proto/gen/incident/v1"
 
 	"watchtower/api/graph/generated"
 	"watchtower/api/graph/model"
@@ -20,41 +19,26 @@ import (
 
 // Register is the resolver for the register field.
 func (r *mutationResolver) Register(ctx context.Context, email string, name string, password string) (*model.AuthPayload, error) {
-	// hash password
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if r.AuthClient == nil {
+		return nil, errors.New("auth service unavailable")
+	}
+	resp, err := r.AuthClient.Register(ctx, &authv1.RegisterRequest{Email: email, Name: name, Password: password})
 	if err != nil {
 		return nil, err
 	}
-	// create user
-	var id int64
-	err = r.DB.QueryRow(ctx, `INSERT INTO users (email, name, password_hash) VALUES ($1,$2,$3) RETURNING id`, email, name, string(hash)).Scan(&id)
-	if err != nil {
-		return nil, err
-	}
-	token, err := r.signToken(strconv.FormatInt(id, 10))
-	if err != nil {
-		return nil, err
-	}
-	return &model.AuthPayload{Token: token, User: &model.User{ID: strconv.FormatInt(id, 10), Email: email, Name: name}}, nil
+	return &model.AuthPayload{Token: resp.GetJwtToken(), User: &model.User{ID: resp.GetUser().GetId(), Email: resp.GetUser().GetEmail(), Name: resp.GetUser().GetName()}}, nil
 }
 
 // Login is the resolver for the login field.
 func (r *mutationResolver) Login(ctx context.Context, email string, password string) (*model.AuthPayload, error) {
-	var id int64
-	var name string
-	var hash string
-	err := r.DB.QueryRow(ctx, `SELECT id, name, password_hash FROM users WHERE email=$1`, email).Scan(&id, &name, &hash)
-	if err != nil {
-		return nil, errors.New("invalid credentials")
+	if r.AuthClient == nil {
+		return nil, errors.New("auth service unavailable")
 	}
-	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)); err != nil {
-		return nil, errors.New("invalid credentials")
-	}
-	token, err := r.signToken(strconv.FormatInt(id, 10))
+	resp, err := r.AuthClient.Login(ctx, &authv1.LoginRequest{Email: email, Password: password})
 	if err != nil {
 		return nil, err
 	}
-	return &model.AuthPayload{Token: token, User: &model.User{ID: strconv.FormatInt(id, 10), Email: email, Name: name}}, nil
+	return &model.AuthPayload{Token: resp.GetJwtToken(), User: &model.User{ID: resp.GetUser().GetId(), Email: resp.GetUser().GetEmail(), Name: resp.GetUser().GetName()}}, nil
 }
 
 // Incidents is the resolver for the incidents field.
@@ -62,26 +46,16 @@ func (r *queryResolver) Incidents(ctx context.Context) ([]model.Incident, error)
 	if uid := ctx.Value("userID"); uid == nil {
 		return nil, errors.New("unauthorized")
 	}
-	rows, err := r.DB.Query(ctx, `SELECT id, title FROM incidents ORDER BY id ASC LIMIT 50`)
+	if r.IncidentClient == nil {
+		return nil, errors.New("incident service unavailable")
+	}
+	resp, err := r.IncidentClient.ListIncidents(ctx, &incidentv1.ListIncidentsRequest{Limit: 50})
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	out := make([]model.Incident, 0)
-	for rows.Next() {
-		var id int64
-		var title string
-		if err := rows.Scan(&id, &title); err != nil {
-			return nil, err
-		}
-		out = append(out, model.Incident{
-			ID:    strconv.FormatInt(id, 10),
-			Title: title,
-		})
-	}
-	if rows.Err() != nil {
-		return nil, rows.Err()
+	out := make([]model.Incident, 0, len(resp.GetIncidents()))
+	for _, it := range resp.GetIncidents() {
+		out = append(out, model.Incident{ID: it.GetId(), Title: it.GetTitle()})
 	}
 	return out, nil
 }
@@ -118,15 +92,7 @@ func (r *subscriptionResolver) OnNewIncident(ctx context.Context) (<-chan *model
 	return ch, nil
 }
 
-func (r *Resolver) signToken(userID string) (string, error) {
-	claims := jwt.MapClaims{
-		"sub": userID,
-		"exp": time.Now().Add(24 * time.Hour).Unix(),
-		"iat": time.Now().Unix(),
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(r.JWTSecret))
-}
+// JWT signing moved to auth-service.
 
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
