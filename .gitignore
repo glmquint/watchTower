@@ -1,0 +1,42 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Expo / React Native
+/.expo/
+android/
+ios/
+build/
+dist/
+*.keystore
+
+# Metro
+.expo/
+.expo-shared/
+
+# VSCode
+.vscode/
+
+# macOS
+.DS_Store
+
+# Go
+bin/
+*.exe
+*.test
+*.out
+vendor/
+
+# Local env
+.env
+.env.local
+.env.*.local
+
+# WSL and temp
+/tmp/
+
+# Logs
+*.log

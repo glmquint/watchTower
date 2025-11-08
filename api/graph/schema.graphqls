@@ -1,0 +1,10 @@
+# GraphQL schema for WatchTower PoC
+
+type Incident {
+  id: ID!
+  title: String!
+}
+
+type Query {
+  incidents: [Incident!]!
+}

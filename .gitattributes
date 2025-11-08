@@ -1,0 +1,7 @@
+* text=auto
+*.go linguist-language=Go
+*.js linguist-language=JavaScript
+*.ts linguist-language=TypeScript
+*.tsx linguist-language=TypeScript
+*.json linguist-language=JSON
+*.md linguist-language=Markdown
