@@ -40,8 +40,39 @@ const splitLink = split(
   authLink.concat(httpLink)
 );
 
+const cache = new InMemoryCache({
+  typePolicies: {
+    Incident: {
+      fields: {
+        comments: {
+          keyArgs: false,
+          merge(existing = [], incoming: any[] = [], { readField }) {
+            // existing/incoming are arrays of refs or objects. We want to
+            // merge them without duplicating by id and preserve order: keep
+            // existing then append any incoming not already present.
+            const merged = existing ? existing.slice(0) : [];
+            const seen = new Set<string | undefined>();
+            for (const item of merged) {
+              const id = readField('id', item) as string | undefined;
+              seen.add(id);
+            }
+            for (const item of incoming) {
+              const id = readField('id', item) as string | undefined;
+              if (!seen.has(id)) {
+                merged.push(item);
+                seen.add(id);
+              }
+            }
+            return merged;
+          },
+        },
+      },
+    },
+  },
+});
+
 const client = new ApolloClient({
-  cache: new InMemoryCache(),
+  cache,
   link: splitLink,
 });
 
