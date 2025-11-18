@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/peer"
 
 	incidentv1 "watchtower/proto/gen/incident/v1"
 )
@@ -159,12 +160,35 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(loggingUnaryInterceptor),
+		grpc.StreamInterceptor(loggingStreamInterceptor),
+	)
 	incidentv1.RegisterIncidentServiceServer(grpcServer, &incidentServer{db: pool, redis: rdb})
 	log.Printf("incident-service gRPC server listening on %s", addr)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("server failed: %v", err)
 	}
+}
+
+// loggingUnaryInterceptor logs each unary gRPC request with metadata about the call.
+func loggingUnaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	start := time.Now()
+	p, _ := peer.FromContext(ctx)
+	resp, err = handler(ctx, req)
+	dur := time.Since(start)
+	log.Printf("gRPC UNARY %s req=%T peer=%v err=%v dur=%s", info.FullMethod, req, p, err, dur)
+	return resp, err
+}
+
+// loggingStreamInterceptor logs streaming gRPC requests.
+func loggingStreamInterceptor(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	start := time.Now()
+	p, _ := peer.FromContext(ss.Context())
+	err := handler(srv, ss)
+	dur := time.Since(start)
+	log.Printf("gRPC STREAM %s peer=%v isServerStream=%v err=%v dur=%s", info.FullMethod, p, info.IsServerStream, err, dur)
+	return err
 }
 
 func dbConfigFromEnv() string {

@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -31,7 +29,9 @@ services:
       - redisdata:/data
 
   auth-service:
-    build: ../services/auth-service
+    build:
+      context: ..
+      dockerfile: services/auth-service/Dockerfile
     container_name: wt_auth_service
     restart: unless-stopped
     environment:
@@ -47,7 +47,9 @@ services:
       - "50051:50051"
 
   incident-service:
-    build: ../services/incident-service
+    build:
+      context: ..
+      dockerfile: services/incident-service/Dockerfile
     container_name: wt_incident_service
     restart: unless-stopped
     environment:
