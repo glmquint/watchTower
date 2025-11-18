@@ -6,7 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { ApolloProvider } from '@/components/ApolloProvider';
-import * as SecureStore from 'expo-secure-store';
+import { getItem } from '../utils/storage';
 import { useEffect } from 'react';
 import { router, usePathname } from 'expo-router';
 
@@ -21,7 +21,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     (async () => {
-      const token = await SecureStore.getItemAsync('jwt');
+      const token = await getItem('jwt');
       // Determine if we're on an auth route. Expo Router may normalize pathnames differently
       // across platforms, so we fall back to segment inspection plus pathname substring.
       // Consider several forms of the auth route: grouped '(auth)' segments, or

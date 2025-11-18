@@ -4,7 +4,7 @@ import { Platform, StyleSheet } from 'react-native';
 import { HelloWave } from '@/components/hello-wave';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
-import * as SecureStore from 'expo-secure-store';
+import { deleteItem } from '../../utils/storage';
 import { router } from 'expo-router';
 import { Button } from 'react-native';
 import { ThemedView } from '@/components/themed-view';
@@ -26,7 +26,7 @@ export default function HomeScreen() {
         <Button
           title="Logout"
           onPress={async () => {
-            await SecureStore.deleteItemAsync('jwt');
+            await deleteItem('jwt');
             // return to login
             router.replace('/login');
           }}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Button, Alert } from 'react-native';
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
-import * as SecureStore from 'expo-secure-store';
+import { setItem } from '../../utils/storage';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 
@@ -29,7 +29,7 @@ export default function RegisterScreen() {
       const { data } = await registerMutation({ variables: { email, name, password } });
       const token = (data as any)?.register?.token as string | undefined;
       if (token) {
-        await SecureStore.setItemAsync('jwt', token);
+        await setItem('jwt', token);
         router.replace('/(tabs)');
       } else {
         Alert.alert('Registration failed', 'No token returned');

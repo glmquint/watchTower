@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, Button, Alert } from 'react-native';
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
-import * as SecureStore from 'expo-secure-store';
+import { getItem, deleteItem, setItem } from '../../utils/storage';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 
@@ -23,7 +23,7 @@ export default function LoginScreen() {
       // If a token is already present, prompt the user to either continue with it
       // or clear it so they can register/login with different credentials.
       try {
-        const token = await SecureStore.getItemAsync('jwt');
+        const token = await getItem('jwt');
         if (token && !promptedRef.current) {
           promptedRef.current = true;
           // show a simplified choice: continue with the current session or use another account
@@ -35,7 +35,7 @@ export default function LoginScreen() {
               {
                 text: 'Use another account',
                 onPress: async () => {
-                  await SecureStore.deleteItemAsync('jwt');
+                  await deleteItem('jwt');
                 },
               },
             ],
@@ -58,7 +58,7 @@ export default function LoginScreen() {
       const { data } = await login({ variables: { email, password } });
       const token = (data as any)?.login?.token as string | undefined;
       if (token) {
-        await SecureStore.setItemAsync('jwt', token);
+        await setItem('jwt', token);
         router.replace('/');
       } else {
         Alert.alert('Login failed', 'No token returned');

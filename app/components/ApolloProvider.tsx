@@ -2,7 +2,7 @@ import React from 'react';
 import { ApolloClient, InMemoryCache, HttpLink, split } from '@apollo/client';
 import { ApolloProvider as Provider } from '@apollo/client/react';
 import Constants from 'expo-constants';
-import * as SecureStore from 'expo-secure-store';
+import { getItem } from '../utils/storage';
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
 import { createClient } from 'graphql-ws';
 import { setContext } from '@apollo/client/link/context';
@@ -14,7 +14,7 @@ const WS_URL = API_URL.replace(/^http/, 'ws');
 const httpLink = new HttpLink({ uri: API_URL });
 
 const authLink = setContext(async (_, { headers }) => {
-  const token = await SecureStore.getItemAsync('jwt');
+  const token = await getItem('jwt');
   return {
     headers: {
       ...headers,
@@ -26,7 +26,7 @@ const authLink = setContext(async (_, { headers }) => {
 const wsLink = new GraphQLWsLink(createClient({
   url: WS_URL,
   connectionParams: async () => {
-    const token = await SecureStore.getItemAsync('jwt');
+    const token = await getItem('jwt');
     return token ? { Authorization: `Bearer ${token}` } : {};
   },
 }));
