@@ -72,5 +72,3 @@ docker compose -f infra/docker-compose.yaml up -d
     npx expo start
     ```
 3.  Scan the QR code with your mobile device or simulator using the Expo Go app. **Note:** You will need to configure your local development environment to access the backend services over your network (e.g., using a tool like ngrok if testing on a real device).
-
-## 💡 Future Enhancements
