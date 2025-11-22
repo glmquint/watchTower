@@ -23,8 +23,6 @@ This project is built on a distributed microservices model to demonstrate expert
 | **Real-Time Layer** | **Redis (Pub/Sub, List)** | Used as a resilient **Job Queue** for alert ingestion and the **Pub/Sub** mechanism for pushing live updates. |
 | **Database** | **Postgres** | Primary data store for all user data, incident state, and the immutable audit log. |
 | **Containerization** | **Docker** | Used for packaging every microservice with multi-stage builds for minimal image sizes. |
-| **Orchestration** | **Kubernetes (GKE)** | Manages the deployment, scaling, health, and networking of all microservices. |
-| **Cloud Provider** | **Google Cloud Platform (GCP)** | Hosts the GKE cluster, Cloud SQL (Postgres), Memorystore (Redis), and managed networking (Ingress). |
 
 ## 🛠️ Local Development Setup
 
@@ -75,77 +73,4 @@ docker compose -f infra/docker-compose.yaml up -d
     ```
 3.  Scan the QR code with your mobile device or simulator using the Expo Go app. **Note:** You will need to configure your local development environment to access the backend services over your network (e.g., using a tool like ngrok if testing on a real device).
 
-## ☁️ Deployment and Security Deep Dive
-
-The production environment is hosted on GCP, leveraging best practices for security and scaling.
-
-### Kubernetes Networking and Security
-
-  * **Zero Trust with Network Policies:** Kubernetes `NetworkPolicy` objects are configured to restrict traffic. For example, the `incident-service` can only receive traffic from the `graphql-api` pod (gRPC) and **cannot** be directly accessed from the public internet.
-  * **GCP Secret Manager:** Sensitive credentials (database passwords, JWT signing keys) are stored securely in **GCP Secret Manager**.
-  * **Workload Identity:** GKE is configured with Workload Identity, allowing Kubernetes Service Accounts to impersonate Google IAM accounts, granting pods permission to access Secret Manager **without** needing secrets in environment variables or configuration files.
-
-### CI/CD Pipeline (Simulated)
-
-A production pipeline (often built with **Google Cloud Build**) would follow this flow:
-
-1.  **`git push`** to the main branch.
-2.  **Cloud Build** triggers:
-    a.  Runs Go unit tests and linting.
-    b.  Builds the Docker image for each updated microservice (multi-stage build).
-    c.  Pushes the container images to **Google Container Registry (GCR)**.
-    d.  Updates the Kubernetes deployment manifests on **GKE** via `kubectl apply`.
-
 ## 💡 Future Enhancements
-
-  * **External Integration:** Add connectors to ingest alerts from real external sources (e.g., GitHub Security Alerts, simulated firewall logs).
-  * **Machine Learning (Go):** Implement a simple Go-based anomaly detection service that reads transactions from Redis and flags unusual patterns before they hit the incident database.
-  * **Web Dashboard:** Create a basic React-based web interface for managers to view high-level dashboards and analytics.
-
-## 🚀 Monolithic PoC (Phase 0)
-
-This initial PoC delivers a single GraphQL endpoint (Go + gqlgen) backed by Postgres, consumed by the Expo mobile client via Apollo.
-
-### Added in this Phase
-* `infra/docker-compose.yaml` – Local Postgres (host port 5432) + Redis.
-* `infra/db/init/001_init.sql` – Creates `users` & `incidents` and seeds demo rows.
-* `api/` – Go monolith with `Query.incidents` resolver hitting Postgres directly.
-* `app/` – Existing Expo project extended with Apollo Client and an Incidents tab.
-
-### Run Stack
-1. Infra:
-  ```bash
-  docker compose -f infra/docker-compose.yaml up -d postgres redis
-  ```
-2. API:
-  ```bash
-  cd api
-  DB_HOST=localhost DB_PORT=5432 DB_USER=watchtower DB_PASSWORD=watchtower DB_NAME=watchtower go run .
-  # Playground: http://localhost:8080/playground
-  # Sample query:
-  # {
-  #   incidents { id title }
-  # }
-  ```
-3. Mobile:
-  ```bash
-  cd app
-  npm install   # first time
-  EXPO_PUBLIC_API_URL=http://<LAN_IP>:8080/query npx expo start
-  ```
-  Replace `<LAN_IP>` with your machine's LAN IP (e.g. `192.168.1.42`) so a physical device can reach the API.
-
-### Verify
-Open the Incidents tab. You should see seeded incidents ("Server down", "High latency"). If not:
-* Test query in playground.
-* Confirm API env vars point to the running Postgres (port 5432).
-* Ensure Expo uses the correct LAN IP (not localhost).
-
-### Next Enhancements
-* Add createIncident mutation.
-* Introduce auth (JWT) & protected resolvers.
-* Redis Pub/Sub + GraphQL subscriptions for real-time updates.
-* Gradually split services (incident, auth) behind gRPC.
-* Add integration tests & CI workflow.
-
-This completes Phase 0: Postgres → Go GraphQL → Apollo → Mobile UI end-to-end.
