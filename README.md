@@ -1,8 +1,8 @@
-# 🛡️ WatchTower: Real-Time Incident Response Platform
+# WatchTower: Real-Time Incident Response Platform
 
 WatchTower is a mobile-first platform designed for Security Operations Center (SOC) teams to ingest, triage, and respond to security alerts in real-time. It showcases a modern, secure, and highly scalable cloud-native architecture using a full-stack, distributed system.
 
-## ✨ Features
+## Features
 
   * **Real-Time Alerting:** Instant push notifications and live dashboard updates for new incidents using GraphQL Subscriptions and Redis Pub/Sub.
   * **Secure Mobile Client (React Native):** Utilizes biometric authentication (FaceID/Fingerprint) and secure storage (Expo SecureStore) for sensitive data access.
@@ -11,7 +11,7 @@ WatchTower is a mobile-first platform designed for Security Operations Center (S
   * **Immutable Audit Log:** All actions (logins, acknowledgments, status changes) are recorded via a dedicated **Audit Service** for compliance and non-repudiation.
   * **Cloud-Native Deployment:** Fully orchestrated on **Google Kubernetes Engine (GKE)** with integrated secret management and network policies.
 
-## 🏗️ Architecture and Technology Stack
+## Architecture and Technology Stack
 
 This project is built on a distributed microservices model to demonstrate expertise across the entire stack, from frontend to cloud infrastructure.
 
@@ -24,7 +24,7 @@ This project is built on a distributed microservices model to demonstrate expert
 | **Database** | **Postgres** | Primary data store for all user data, incident state, and the immutable audit log. |
 | **Containerization** | **Docker** | Used for packaging every microservice with multi-stage builds for minimal image sizes. |
 
-## 🛠️ Local Development Setup
+## Local Development Setup
 
 ### Prerequisites
 
